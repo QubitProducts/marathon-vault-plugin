@@ -6,6 +6,7 @@ buildscript {
         classpath 'com.avast.gradle:gradle-docker-compose-plugin:0.5.1'
         classpath 'com.github.ben-manes:gradle-versions-plugin:0.15.0'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+        classpath "com.netflix.nebula:gradle-ospackage-plugin:4.4.0"
     }
 }
 
@@ -18,6 +19,7 @@ apply plugin: 'maven'
 apply plugin: 'com.github.ben-manes.versions'
 apply plugin: 'docker-compose'
 apply plugin: 'com.jfrog.bintray'
+apply plugin: "nebula.ospackage"
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
@@ -32,6 +34,14 @@ repositories {
 
 task bundle(type: Tar) {
     into("") {
+        from project.configurations.runtime
+        from project.tasks.jar
+    }
+}
+
+task deb(type: Deb) {
+    release '1'
+    into("/usr/libexec/marathon-vault-plugin") {
         from project.configurations.runtime
         from project.tasks.jar
     }
