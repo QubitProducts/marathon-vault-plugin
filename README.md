@@ -1,29 +1,9 @@
-# Marathon Vault plugin [![Build Status](https://travis-ci.org/avast/marathon-vault-plugin.svg?branch=master)](https://travis-ci.org/avast/marathon-vault-plugin) [![Download](https://api.bintray.com/packages/avast/maven/marathon-vault-plugin/images/download.svg) ](https://bintray.com/avast/maven/marathon-vault-plugin/_latestVersion)
+Plugin for [Marathon](https://mesosphere.github.io/marathon/) which injects a vault approle secret-id
 
-Plugin for [Marathon](https://mesosphere.github.io/marathon/) which injects secrets stored in [Vault](https://www.vaultproject.io/) via environment variables.
+This is an adaption of [marathon-vault-pluin](https://github.com/avast/marathon-vault-plugin), that will use a marathon app-id as a vault approle role for login.
 
-## How to reference secrets in marathon.json
-
-The following example `marathon.json` fragment will read Vault path `/secret/abc/xyz`, extract field `password` from that path and inject the field value into an environment variable named `ENV_NAME`:
-
-```json
-{
-  "env": {
-    "ENV_NAME": {
-      "secret": "secret_ref"
-    }
-  },
-  "secrets": {
-    "secret_ref": {
-      "source": "/secret/abc/xyz@password"
-    }
-  }
-}
-```
-
-If the provided Vault path or field is not found, the environment variable will not be set. The same applies when it cannot be read because of permissions or other types of errors. Either way, it will be logged as an error in Marathon logs.
-
-## Installation
+After a successful login, `VAULT_APPROLE_SECRET_ID` should be set to the value of the secret-id. The content of the container should then use a role-id to log into the the role, and retrieve secrets with the resulting
+token.
 
 Please consult the [Start Marathon with plugins](https://mesosphere.github.io/marathon/docs/plugin.html#start-marathon-with-plugins) section of the official docs for a general overview of how plugins are enabled.
 

@@ -48,17 +48,9 @@ class VaultPlugin extends RunSpecTaskProcessor with PluginConfiguration {
 
   def taskInfo(appSpec: ApplicationSpec, builder: TaskInfo.Builder): Unit = {
     val envBuilder = builder.getCommand.getEnvironment.toBuilder
-    appSpec.env.foreach {
-      case (name, v: EnvVarSecretRef) =>
-        appSpec.secrets.get(v.secret) match {
-          case Some(secret) =>
-            getSecretValueFromVault(secret) match {
-              case Success(secretValue) => envBuilder.addVariables(Variable.newBuilder().setName(name).setValue(secretValue))
-              case Failure(e) => logger.error(s"Secret ${v.secret} in ${appSpec.id} application cannot be read from Vault (source: ${secret.source})", e)
-            }
-          case None => logger.error(s"Secret ${v.secret} for ${appSpec.id} application not found in secrets definition in Marathon")
-        }
-      case _ => // plain environment variable
+    getAppRoleSecretIDFromVault(s"${appSpec.id}") match {
+      case Success(secretIDValue) => envBuilder.addVariables(Variable.newBuilder().setName("VAULT_APPROLE_SECRET_ID").setValue(secretIDValue))
+      case Failure(e) => logger.error(s"SecretID for ${appSpec.id} cannot be read from Vault", e)
     }
 
     val commandBuilder = builder.getCommand.toBuilder
@@ -80,6 +72,18 @@ class VaultPlugin extends RunSpecTaskProcessor with PluginConfiguration {
     } else {
       Failure(new RuntimeException(s"Secret $source cannot be read because it cannot be parsed"))
     }
+  }.flatten
+
+  private def getAppRoleSecretIDFromVault(approle: String): Try[String] = Try {
+      var writeArgs: java.util.Map[String, Object] = new java.util.HashMap[String, Object]
+      val path = s"auth/approle/role${approle}/secret-id"
+      logger.info(s"writing to path: $path")
+      val sid = vault.logical().write(path,writeArgs)
+      logger.info(s"got: $sid")
+      Option(sid.getData.get("secret_id")) match {
+        case Some(secretValue) => Success(secretValue)
+        case None => Failure(new RuntimeException(s"Could not retrieve secret-id for $approle"))
+      }
   }.flatten
 
   def taskGroup(podSpec: PodSpec, executor: Builder, taskGroup: TaskGroupInfo.Builder): Unit = {
