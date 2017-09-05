@@ -5,7 +5,8 @@
       "implementation": "com.avast.marathon.plugin.vault.VaultPlugin",
       "configuration": {
         "address": "http://vault:8200",
-        "token": "testroottoken"
+        "token": "testroottoken",
+        "varName": "SOME_ENV_VAR"
       }
     }
   }

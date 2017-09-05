@@ -59,7 +59,7 @@ class PluginTest extends FlatSpec with Matchers {
   }
 
   private def deployWithAppRole(roleName: String): String = {
-    val envVarName = "VAULT_APPROLE_SECRET_ID"
+    val envVarName = "SOME_ENV_VAR"
     val appId = roleName
     val json = s"""{ "id": "$appId","cmd": "${EnvAppCmd.create(envVarName)}" }"""
     System.out.println(s"MARATHON: $json")
@@ -70,7 +70,7 @@ class PluginTest extends FlatSpec with Matchers {
   }
 
   private def check(roleName: String, deployApp: String => String)(verifier: String => Unit) = {
-    val envVarName = "VAULT_APPROLE_SECRET_ID"
+    val envVarName = "SOME_ENV_VAR"
     val client = MarathonClient.getInstance(marathonUrl)
     val eventStream = new MarathonEventStream(marathonUrl)
 
@@ -80,6 +80,9 @@ class PluginTest extends FlatSpec with Matchers {
 
     val agentClient = MesosAgentClient(mesosSlaveUrl)
     val state = agentClient.fetchState()
+    System.out.println(s"STATE $state")
+    System.out.println(s"STATE(F0): ${state.frameworks}")
+    System.out.println(s"STATE(F0E0): ${state.frameworks(0).executors(0)}")
 
     val secretId = agentClient.waitForStdOutContentsMatch(envVarName, state.frameworks(0).executors(0),
       o => EnvAppCmd.extractEnvValue(envVarName, o),
